@@ -1,6 +1,5 @@
 import numpy as np
 
-
 epsilon=23.44 /180*np.pi #Earth Obliquity in radians
 eccentricity=0.0167 #Earth orbit Eccentricity
 Period=365.25 #Earth Period in days
@@ -17,15 +16,6 @@ class CartesianCoordinate():
     def DotProduct(self, v):
         return self.x*v.x + self.y*v.y + self.z*v.z
     
-    def find1Normal(self):
-        """Finds a normal vector to the tangent plane at a given point
-        Datum_fun: Data point in Cartesian Coordinate System
-        returns: Normal vector to the tangent plane at the given point"""
-        x = self.x
-        y = self.y
-        z = self.z
-        return CartesianCoordinate(-y,x,0)
-
 class CelestialCoordinate():
     def __init__(self, longitude, latitude, err_long, err_lat, JulianDate):
         self.longitude = longitude
@@ -45,15 +35,7 @@ class CelestialCoordinate():
         self.latitude = beta
         self.longitude = lambda_b
         return self
-    
-    def FindNormal(self)->CartesianCoordinate:
-        """Finds the normal vector to the tangent plane at a given point
-        Datum_fun: Data point in Ecliptic Coordinate System
-        returns: Normal vector to the tangent plane at the given point"""
-        alpha = self.longitude
-        delta = self.latitude
-        return CartesianCoordinate(-np.cos(alpha)*np.cos(delta),-np.sin(alpha)*np.cos(delta),-np.sin(delta))
-    
+       
     def get_longitude(self)->float:
         return self.longitude
     
@@ -78,6 +60,12 @@ class CelestialCoordinate():
     def GetEarthLambda(self)->float:
         return 2*np.pi*(self.JulianDate- JD_VernalEquinox)/Period
     
+    def get_ra(self)->float:
+        return self.longitude
+    
+    def get_err_ra(self)->float:
+        return self.err_long
+    
 class NodeList():
     def __init__(self):
         self.length = 0
@@ -91,7 +79,7 @@ class NodeList():
         self.node_list.pop(index)
         self.length -= 1
 
-    def get_node(self, index)->CelestialCoordinate:
+    def get_node(self, index):
         return self.node_list[index]
     
     def get_length(self)->int:
@@ -102,9 +90,9 @@ txtIn = np.dtype({
     'formats':['f', 'f', 'f', 'f', 'f', 'f', 'f', 'f', 'f']
 }) #Data type for the data
 
-def ReadData()->NodeList:
+def ReadData(s:str)->NodeList:
     ## Data Input from txt file
-    DataIn_txt = np.loadtxt('hii_625.txt', dtype=txtIn) #Load data from file
+    DataIn_txt = np.loadtxt(s, dtype=txtIn) #Load data from file
     N = len(DataIn_txt) #Number of data points
 
     ## transform data into a list of nodes
