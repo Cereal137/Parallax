@@ -6,6 +6,7 @@ Period=365.25 #Earth Period in days
 semi_major_axis=1.00000011 #Earth Semi-Major Axis in AU
 JD_VernalEquinox=2451623.815972 #Julian Date of Vernal Equinox in 2000
 JD_Perihelion=2451546.708333 #Julian Date of Perihelion in 2000
+c_AU_yr= 63239.7263 #speed of light in AU/yr
 
 class CartesianCoordinate():
     def __init__(self, x, y, z):
@@ -31,9 +32,22 @@ class CelestialCoordinate():
         alpha = self.longitude
         delta = self.latitude
         beta = np.arcsin(np.sin(delta)*np.cos(epsilon) - np.cos(delta)*np.sin(epsilon)*np.sin(alpha))
-        lambda_b = np.arccos((np.cos(delta)*np.sin(alpha))/(np.cos(beta)))
+        lambda_b = np.arccos((np.cos(delta)*np.cos(alpha))/(np.cos(beta)))
         self.latitude = beta
         self.longitude = lambda_b
+        return self
+
+    def Ecliptic2Equator(self):
+        """Converts from Ecliptic Coordinate System to Equatorial Coordinate System
+        Datum_fun: Data point in Ecliptic Coordinate System
+        returns: Data point in Equatorial Coordinate System"""
+        lambda_b = self.longitude
+        beta = self.latitude
+        delta = np.arcsin(np.sin(beta)*np.cos(epsilon) + np.cos(beta)*np.sin(epsilon)*np.sin(lambda_b))
+        sign = (-np.sin(epsilon)*np.sin(beta) +np.cos(beta)*np.cos(epsilon)*np.sin(lambda_b) )/np.abs((-np.sin(epsilon)*np.sin(beta) +np.cos(beta)*np.cos(epsilon)*np.sin(lambda_b) ))
+        alpha = -sign*np.arccos((np.cos(beta)*np.cos(lambda_b))/np.cos(delta))
+        self.latitude = delta
+        self.longitude = alpha
         return self
        
     def get_longitude(self)->float:
@@ -51,6 +65,9 @@ class CelestialCoordinate():
     def get_JulianDate(self)->float:
         return self.JulianDate
     
+    def get_Year(self)->float:
+        return self.JulianDate/Period-4712
+    
     def GetEarthDistance(self)->float:
         #Finds the distance of the Earth from the Sun
         Phase = 2*np.pi*(-JD_Perihelion+self.JulianDate)/Period
@@ -60,11 +77,8 @@ class CelestialCoordinate():
     def GetEarthLambda(self)->float:
         return 2*np.pi*(self.JulianDate- JD_VernalEquinox)/Period
     
-    def get_ra(self)->float:
-        return self.longitude
-    
-    def get_err_ra(self)->float:
-        return self.err_long
+    def normal_vector(self)->np.ndarray:
+        return np.array([np.cos(self.longitude)*np.cos(self.latitude), np.sin(self.longitude)*np.cos(self.latitude), np.sin(self.latitude)])
     
 class NodeList():
     def __init__(self):
@@ -79,7 +93,7 @@ class NodeList():
         self.node_list.pop(index)
         self.length -= 1
 
-    def get_node(self, index):
+    def get_node(self, index)->CelestialCoordinate:
         return self.node_list[index]
     
     def get_length(self)->int:
